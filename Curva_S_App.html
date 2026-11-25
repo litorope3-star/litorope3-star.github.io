@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Curva S · Seguimiento de avance</title>
+<style>
+:root{--g:#072E2D;--o:#F29B2A;--bg:#F4F7F6;--ln:#D5E0DE;--ok:#1B7F5C;--bad:#C0392B}
+*{box-sizing:border-box}body{margin:0;font:14px/1.4 "Segoe UI",system-ui,sans-serif;background:var(--bg);color:var(--g)}
+header{background:var(--g);color:#fff;padding:14px 20px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+h1{font-size:18px;margin:0;flex:1}h1 i{color:var(--o);font-style:normal}h2{font-size:15px;margin:0 0 8px}
+main{max-width:1200px;margin:auto;padding:16px}
+.card{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:14px;margin-bottom:14px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:14px}
+.k{background:#fff;border:1px solid var(--ln);border-left:4px solid var(--o);border-radius:8px;padding:10px}.k small{color:#5d7472}.k b{display:block;font-size:21px}
+button{font:inherit;background:var(--g);color:#fff;border:0;border-radius:6px;padding:6px 12px;cursor:pointer}button.o{background:var(--o);color:var(--g);font-weight:600}
+.tip{position:fixed;pointer-events:none;background:var(--g);color:#fff;padding:8px 10px;border-radius:6px;font-size:12px;display:none;z-index:9}
+table{width:100%;border-collapse:collapse;font-size:13px}th{background:var(--g);color:#fff;position:sticky;top:0;z-index:1}
+th,td{padding:5px 8px;text-align:right;border-bottom:1px solid var(--ln)}td:nth-child(-n+2),th:nth-child(-n+2){text-align:left}
+td input{width:70px;text-align:right;font:inherit;border:1px solid var(--ln);border-radius:4px;padding:3px}
+tr.cur td{background:#FDE9CC}.up{color:var(--ok)}.dn{color:var(--bad)}.wrap{max-height:460px;overflow:auto}
+svg{width:100%;height:auto;display:block}textarea{width:100%;height:70px;font:12px monospace}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+</style></head><body>
+<div id="app"></div><div class="tip" id="tip"></div>
+<script id="seed" type="application/json">{"name":"Obra","budget":4123080.01,"w":[["–",0,0],["01 – 06 junio 2026",0.0243,0.02],["08 – 13 junio 2026",0.0487,0.04],["15 – 20 junio 2026",0.073,0.06],["22 – 27 junio 2026",0.0974,0.085],["29 junio – 04 julio 2026",0.1217,0.11],["06 – 11 julio 2026",0.1433,0.13],["13 – 18 julio 2026",0.165,0.15],["20 – 25 julio 2026",0.1866,0.17],["27 julio – 01 agosto 2026",0.2082,0.19],["03 – 08 agosto 2026",0.2245,0.195],["10 – 15 agosto 2026",0.2409,0.2],["17 – 22 agosto 2026",0.2572,0.21],["24 – 29 agosto 2026",0.2736,0.22],["31 agosto – 05 septiembre 2026",0.2899,0.26],["07 – 12 septiembre 2026",0.3168,0.3],["14 – 19 septiembre 2026",0.3438,0.344],["21 – 26 septiembre 2026",0.3708,0.39],["28 septiembre – 03 octubre 2026",0.3977,0.43],["05 – 10 octubre 2026",0.4283,0.45],["12 – 17 octubre 2026",0.4589,0.48],["19 – 24 octubre 2026",0.4895,0.505],["26 – 31 octubre 2026",0.5201,0.5112],["02 – 07 noviembre 2026",0.5411,0.53],["09 – 14 noviembre 2026",0.5622,0.55],["16 – 21 noviembre 2026",0.5832,0.617],["23 – 28 noviembre 2026",0.6043,null],["30 noviembre – 05 diciembre 2026",0.6253,null],["07 – 12 diciembre 2026",0.6447,null],["14 – 19 diciembre 2026",0.6642,null],["21 – 26 diciembre 2026",0.6837,null],["28 diciembre – 02 enero 2027",0.7031,null],["04 – 09 enero 2027",0.7203,null],["11 – 16 enero 2027",0.7375,null],["18 – 23 enero 2027",0.7546,null],["25 – 30 enero 2027",0.7718,null],["01 – 06 febrero 2027",0.7909,null],["08 – 13 febrero 2027",0.81,null],["15 – 20 febrero 2027",0.8291,null],["22 – 27 febrero 2027",0.8482,null],["01 – 06 marzo 2027",0.8698,null],["08 – 13 marzo 2027",0.8913,null],["15 – 20 marzo 2027",0.9129,null],["22 – 27 marzo 2027",0.9344,null],["29 marzo – 03 abril 2027",0.956,null],["05 – 10 abril 2027",0.9661,null],["12 – 17 abril 2027",0.9761,null],["19 – 24 abril 2027",0.9862,null],["26 abril – 01 mayo 2027",0.9963,null],["03 – 08 mayo 2027",0.9972,null],["10 – 15 mayo 2027",0.9981,null],["17 – 22 mayo 2027",0.9991,null],["24 – 29 mayo 2027",1,null]]}</script>
+<script>
+/* ===== Estado: S = {name, budget, w:[[periodo, planificado, real|null], ...]} ; índice = nº de semana ===== */
+const KEY='curvaS_beeyond_v1', $=s=>document.querySelector(s), seed=JSON.parse($('#seed').textContent);
+let S=null; try{S=JSON.parse(localStorage.getItem(KEY))}catch(e){} if(!S||!S.w)S=JSON.parse(JSON.stringify(seed));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));$('#sv').textContent='Guardado automático ✓ '+new Date().toLocaleTimeString()}catch(e){$('#sv').textContent='Sin almacenamiento local (use Exportar)'}};
+const P=v=>v==null?'–':(v*100).toFixed(2)+'%', D=v=>v==null?'–':(v>0?'+':'')+(v*100).toFixed(2)+' pp', M=v=>'S/ '+v.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const cls=v=>v==null?'':v>0.0005?'up':v<-0.0005?'dn':'';
+
+/* ===== Cálculos por semana ===== */
+const cur=()=>{let c=0;S.w.forEach((r,i)=>{if(r[2]!=null)c=i});return c};
+function rw(i){const a=S.w[i],b=S.w[i-1],pl=a[1],re=a[2];
+ const dpl=b?pl-b[1]:null, dre=b&&re!=null&&b[2]!=null?re-b[2]:null, v=re!=null?re-pl:null, pv=b&&b[2]!=null?b[2]-b[1]:null;
+ return{pl,re,dpl,dre,v,dv:v!=null&&pv!=null?v-pv:null}}
+
+/* ===== Gráfico SVG genérico (líneas o barras) con tooltip ===== */
+function chart(el,o){const W=900,H=300,L=44,R=10,T=10,B=24,n=o.n,pw=W-L-R,ph=H-T-B,ns=o.s.length;
+ let mx=Math.max(0.01,...o.s.flatMap(s=>s.v.filter(x=>x!=null)));mx=o.max||Math.ceil(mx*20)/20;
+ const X=i=>L+(o.bar?(i+.5)/n:i/Math.max(n-1,1))*pw,Y=v=>T+ph-v/mx*ph,st=Math.ceil(n/13);let h='';
+ for(let k=0;k<=4;k++){const y=T+ph*k/4;h+=`<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" stroke="#DCE5E3"/><text x="${L-6}" y="${y+4}" text-anchor="end" font-size="11" fill="#5d7472">${(mx*(1-k/4)*100).toFixed(mx<.2?1:0)}%</text>`}
+ for(let i=0;i<n;i+=st)h+=`<text x="${X(i)}" y="${H-6}" text-anchor="middle" font-size="11" fill="#5d7472">${o.lab(i)}</text>`;
+ o.s.forEach((s,j)=>{if(o.bar){const bw=pw/n*.8/ns;s.v.forEach((v,i)=>{if(v!=null)h+=`<rect x="${X(i)-bw*ns/2+j*bw}" y="${Y(v)}" width="${bw}" height="${ph*v/mx}" fill="${s.c}"/>`})}
+  else{let d='',pen=false;s.v.forEach((v,i)=>{if(v==null){pen=false;return}d+=(pen?'L':'M')+X(i)+' '+Y(v);pen=true});
+   h+=`<path d="${d}" fill="none" stroke="${s.c}" stroke-width="${s.w||3}" stroke-linejoin="round"/>`;
+   if(s.dots)s.v.forEach((v,i)=>{if(v!=null)h+=`<circle cx="${X(i)}" cy="${Y(v)}" r="3" fill="${s.c}" stroke="#fff"/>`})}});
+ el.innerHTML=`<svg viewBox="0 0 ${W} ${H}">${h}<line class="hv" y1="${T}" y2="${T+ph}" stroke="#072E2D" stroke-dasharray="3" visibility="hidden"/></svg>`;
+ const tip=$('#tip'),hv=el.querySelector('.hv');
+ el.onpointermove=e=>{const r=el.getBoundingClientRect(),x=(e.clientX-r.left)/r.width*W;
+  const i=Math.max(0,Math.min(n-1,Math.round(o.bar?(x-L)/pw*n-.5:(x-L)/pw*(n-1))));
+  hv.setAttribute('x1',X(i));hv.setAttribute('x2',X(i));hv.setAttribute('visibility','visible');
+  tip.innerHTML=o.tip(i);tip.style.display='block';tip.style.left=Math.min(e.clientX+14,innerWidth-230)+'px';tip.style.top=(e.clientY+14)+'px'};
+ el.onpointerleave=()=>{tip.style.display='none';hv.setAttribute('visibility','hidden')}}
+
+/* ===== Interfaz ===== */
+function build(){$('#app').innerHTML=`
+<header><h1><i>●</i> ${S.name} · Curva S de avance</h1><span id="sv" style="font-size:12px;opacity:.8"></span>
+<button class="o" onclick="dl('curva_s.csv',csv(),'text/csv')">CSV</button><button class="o" onclick="dl('curva_s.json',JSON.stringify(S,null,1),'application/json')">JSON</button>
+<button class="o" onclick="html()">HTML actualizado</button></header>
+<main><div class="kpis" id="kp"></div>
+<div class="card"><h2>Curva S acumulada: Planificado vs Real</h2><div id="c1"></div></div>
+<div class="card"><h2>Avance puntual por semana (Δ)</h2><div id="c2"></div></div>
+<div class="card"><h2>Registro semana a semana <small style="font-weight:400">· escriba el % acumulado (ej. 61.7); el planificado también es editable</small></h2>
+<div class="wrap"><table><thead><tr><th>Sem.</th><th>Periodo</th><th>Plan acum. %</th><th>Real acum. %</th><th>Δ plan</th><th>Δ real</th><th>Variación</th><th>Cambio variación</th><th>Estado</th></tr></thead><tbody id="tb"></tbody></table></div></div>
+<div class="card"><h2>Datos</h2><div class="row"><label>Proyecto <input id="nm" value="${S.name}"></label><label>Presupuesto S/ <input id="bd" type="number" value="${S.budget}"></label>
+<input type="file" id="fl" accept=".csv,.txt,.json"><button onclick="if(confirm('¿Restaurar la línea base original del Excel? Se pierde el real registrado.')){S=JSON.parse(JSON.stringify(seed));save();build()}">Restaurar Excel original</button></div>
+<p style="margin:8px 0 4px">Pegue aquí filas copiadas de Excel o CSV (columnas con encabezados como <i>Semanas, Periodo, Ejecutado, Planificado</i>):</p>
+<textarea id="ta"></textarea><button onclick="imp($('#ta').value)">Importar texto</button></div></main>`;
+ $('#tb').innerHTML=S.w.map((r,i)=>i?`<tr data-i="${i}"><td>Semana ${i}</td><td>${r[0]}</td><td><input data-k="1"></td><td><input data-k="2"></td><td data-c="dpl"></td><td data-c="dre"></td><td data-c="v"></td><td data-c="dv"></td><td data-c="e"></td></tr>`:'').join('');
+ $('#tb').onchange=e=>{const t=e.target,i=+t.closest('tr').dataset.i,k=+t.dataset.k,x=parseFloat(t.value.replace(',','.'));
+  S.w[i][k]=isNaN(x)?(k==2?null:S.w[i][1]):Math.min(1,Math.max(0,x/100));upd();save()};
+ $('#nm').onchange=e=>{S.name=e.target.value;save();$('h1').innerHTML='<i>●</i> '+S.name+' · Curva S de avance'};
+ $('#bd').onchange=e=>{S.budget=+e.target.value||0;save();upd()};
+ $('#fl').onchange=e=>{const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>imp(r.result);r.readAsText(f)};
+ upd();save();const c=document.querySelector('tr.cur');if(c)c.scrollIntoView({block:'center'})}
+
+function upd(){const c=cur(),a=rw(c),n=S.w.length-1;
+ const last4=[];for(let i=Math.max(1,c-3);i<=c;i++){const d=rw(i).dre;if(d!=null)last4.push(d)};
+ const rit=last4.length?last4.reduce((x,y)=>x+y)/last4.length:null, req=n>c?(1-a.re)/(n-c):0, proy=rit>0?c+(1-a.re)/rit:null;
+ const k=(t,v,s='')=>`<div class="k"><small>${t}</small><b class="${s}">${v}</b></div>`;
+ $('#kp').innerHTML=k('Semana actual',c+' de '+n)+k('Planificado',P(a.pl))+k('Real',P(a.re))+k('Variación',D(a.v)+(a.v>0.0005?' · adelanto':a.v<-0.0005?' · atraso':''),cls(a.v))
+  +k('Ritmo últ. 4 sem.',rit==null?'–':(rit*100).toFixed(2)+' pp/sem')+k('Ritmo requerido a sem. '+n,(req*100).toFixed(2)+' pp/sem')
+  +k('Proyección de término',proy?'Sem. '+Math.round(proy):'–')+k('Valorizado real',M(a.re*S.budget));
+ const all=S.w.map((_,i)=>rw(i)),tipS=i=>{const r=all[i];return `<b>Semana ${i}</b> ${S.w[i][0]}<br>Planificado: ${P(r.pl)}<br>Real: ${P(r.re)}<br>Variación: ${D(r.v)}<br>Δ semana plan/real: ${D(r.dpl)} / ${D(r.dre)}`};
+ chart($('#c1'),{n:n+1,max:1,lab:i=>i,tip:tipS,s:[{c:'#072E2D',v:all.map(r=>r.pl)},{c:'#F29B2A',w:3.5,dots:1,v:all.map(r=>r.re)}]});
+ chart($('#c2'),{n:Math.max(c,1),bar:1,lab:i=>i+1,tip:i=>tipS(i+1),s:[{c:'#072E2D',v:all.slice(1,c+1).map(r=>r.dpl)},{c:'#F29B2A',v:all.slice(1,c+1).map(r=>r.dre)}]});
+ document.querySelectorAll('#tb tr').forEach(tr=>{const i=+tr.dataset.i,r=all[i],q=(s,v,t)=>{const e=tr.querySelector(s);e.textContent=t;e.className=cls(v)};
+  const ins=tr.querySelectorAll('input');if(document.activeElement!==ins[0])ins[0].value=(r.pl*100).toFixed(2);if(document.activeElement!==ins[1])ins[1].value=r.re==null?'':(r.re*100).toFixed(2);
+  q('[data-c=dpl]',0,P(r.dpl));q('[data-c=dre]',r.dre,P(r.dre));q('[data-c=v]',r.v,D(r.v));q('[data-c=dv]',r.dv,D(r.dv));
+  q('[data-c=e]',r.v,r.v==null?'':r.v>0.0005?'Adelanto':r.v<-0.0005?'Atraso':'En línea');tr.className=i==c?'cur':''})}
+
+/* ===== Importar / exportar ===== */
+function imp(t){try{t=t.trim();if(t[0]=='{'){S=JSON.parse(t);save();return build()}
+ const L=t.split(/\r?\n/).filter(x=>x.trim()),d=[';','\t',','].find(s=>L[0].includes(s))||',',R=L.map(l=>l.split(d).map(x=>x.trim().replace(/^"|"$/g,'')));
+ const hd=R[0],f=re=>hd.findIndex(h=>re.test(h)),ip=f(/plan/i),ir=f(/real|ejecut/i),iq=f(/period/i);if(ip<0||ir<0)throw 'Encabezados no reconocidos (se requiere Planificado y Real/Ejecutado)';
+ const num=x=>{const v=parseFloat(String(x).replace('%','').replace(',','.'));return isNaN(v)?null:v},rows=R.slice(1).map(r=>({n:parseInt((r[0].match(/\d+/)||[])[0]),p:num(r[ip]),r:num(r[ir]),q:iq>=0?r[iq]:null})).filter(x=>!isNaN(x.n));
+ const big=Math.max(...rows.flatMap(x=>[x.p,x.r]).filter(x=>x!=null))>1.5;
+ rows.forEach(x=>{const w=S.w[x.n]||(S.w[x.n]=['–',0,null]);if(x.p!=null)w[1]=big?x.p/100:x.p;w[2]=x.r==null?null:big?x.r/100:x.r;if(x.q&&x.q!='-')w[0]=x.q});
+ save();build()}catch(e){alert('No se pudo importar: '+e)}}
+const csv=()=>'\ufeffsemana,periodo,planificado_acum,real_acum,delta_plan,delta_real,variacion_pp\n'+S.w.map((r,i)=>{const x=rw(i),f=v=>v==null?'':(v*100).toFixed(2);return [i,'"'+r[0]+'"',f(x.pl),f(x.re),f(x.dpl),f(x.dre),f(x.v)].join(',')}).join('\n');
+function dl(n,t,m){const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([t],{type:m}));a.download=n;a.click()}
+function html(){const c=document.documentElement.cloneNode(true);c.querySelector('#seed').textContent=JSON.stringify(S);c.querySelector('#app').innerHTML='';c.querySelector('#tip').removeAttribute('style');dl('curva_s_actualizada.html','<!DOCTYPE html>\n'+c.outerHTML,'text/html')}
+build();
+</script></body></html>
